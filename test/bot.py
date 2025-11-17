@@ -29,10 +29,19 @@ from pipecat.services.gemini_multimodal_live import (
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
 
+from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.adapters.schemas.tools_schema import ToolsSchema
+from pipecat.services.llm_service import FunctionCallParams
+
 load_dotenv(override=True)
 
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
+
+
+async def fetch_restaurant_recommendation(params: FunctionCallParams):
+    logger.info(f"Fetching restaurant recommendation for {params.arguments}")
+    await params.result_callback({"name": "面に光を"})
 
 
 class EdgeDetectionProcessor(FrameProcessor):
@@ -98,12 +107,34 @@ async def run_bot(webrtc_connection):
         webrtc_connection=webrtc_connection, params=transport_params
     )
 
+    restaurant_function = FunctionSchema(
+        name="get_restaurant_recommendation",
+        description="Get a restaurant recommendation",
+        properties={
+            "location": {
+                "type": "string",
+                "description": "The city and state, e.g. San Francisco, CA",
+            },
+        },
+        required=["location"],
+    )
+
+    tools = ToolsSchema(
+        standard_tools=[restaurant_function],
+        custom_tools={},
+    )
+
     llm = GeminiMultimodalLiveLLMService(
         api_key=os.getenv("GOOGLE_API_KEY"),
         voice_id="Puck",  # Aoede, Charon, Fenrir, Kore, Puck
         transcribe_user_audio=True,
         transcribe_model_audio=True,
         system_instruction=SYSTEM_INSTRUCTION,
+        tools=tools,
+    )
+
+    llm.register_function(
+        "get_restaurant_recommendation", fetch_restaurant_recommendation
     )
 
     context = OpenAILLMContext(
