@@ -31,8 +31,7 @@ This is a simple example app to help you test your Pipecat bot with a prebuilt U
 
 4. **Add API keys** to your `.env` file for:
 
-    - Google (e.g., for Speech-to-Text or other services)
-
+    - Google (e.g., for Speech-to-Text or other services): [https://aistudio.google.com/app/api-keys]
 ---
 
 ## ▶️ Run the Example
